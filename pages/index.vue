@@ -1,89 +1,176 @@
 <template>
-  <v-row justify="center" align="center">
-    <v-col cols="12" sm="8" md="6">
-      <div class="text-center">
-        <logo />
-        <vuetify-logo />
-      </div>
-      <v-card>
-        <v-card-title class="headline">
-          Welcome to the Vuetify + Nuxt.js template
-        </v-card-title>
-        <v-card-text>
-          <p>Vuetify is a progressive Material Design component framework for Vue.js. It was designed to empower developers to create amazing applications.</p>
-          <p>
-            For more information on Vuetify, check out the <a
-              href="https://vuetifyjs.com"
-              target="_blank"
-              rel="noopener noreferrer"
+  <v-container fluid>
+    <h2 class="text-h4 pb-5 capitalize font-weight-medium primaryColor--text">
+      Dashboard
+    </h2>
+
+    <v-row>
+      <v-col>
+        <v-card class="pa-4 pt-0" color="transparent" elevation="0">
+          <v-row>
+            <v-col v-for="(data, index) in dataStat" :key="index">
+              <v-card rounded="lg">
+                <v-card-text class="d-flex pt-2 pb-0 justify-center">
+                  <v-icon x-large v-text="data.emoticon"></v-icon>
+                </v-card-text>
+
+                <v-card-title
+                  class="text-capitalize text-subtitle-1 font-weight-bold px-0 primaryColor--text d-flex justify-center"
+                  v-text="data.title"
+                >
+                </v-card-title>
+
+                <v-card-subtitle
+                  class="d-flex font-weight-medium justify-center primaryColor--text"
+                >
+                  {{ data.total.toLocaleString("id-ID") }}
+                </v-card-subtitle>
+              </v-card>
+            </v-col>
+          </v-row>
+
+          <v-card rounded="lg" class="pa-2 my-5">
+            <v-card-title
+              class="capitalize font-weight-normal primayrColor--text text-h6"
+              >Data total covid 19 di beberapa provinsi di
+              indonesia</v-card-title
             >
-              documentation
-            </a>.
-          </p>
-          <p>
-            If you have questions, please join the official <a
-              href="https://chat.vuetifyjs.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="chat"
+            <v-card-subtitle class="pa-10">
+              <TrackerCoronaComponentChartPolarArea
+                :resultDataLocation="locationResult"
+              />
+            </v-card-subtitle>
+          </v-card>
+        </v-card>
+      </v-col>
+      <v-col>
+        <v-card min-height="95%" rounded="lg" max-height="95%">
+          <v-card-text>
+            <TrackerCoronaComponentNews :news="newsResult" />
+          </v-card-text>
+
+          <v-card-actions class="px-6">
+            <NuxtLink
+              to="/allNews"
+              class="capitalize font-weight-bold blue--text pa-1"
             >
-              discord
-            </a>.
-          </p>
-          <p>
-            Find a bug? Report it on the github <a
-              href="https://github.com/vuetifyjs/vuetify/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="contribute"
-            >
-              issue board
-            </a>.
-          </p>
-          <p>Thank you for developing with Vuetify and I look forward to bringing more exciting features in the future.</p>
-          <div class="text-xs-right">
-            <em><small>&mdash; John Leider</small></em>
-          </div>
-          <hr class="my-3">
-          <a
-            href="https://nuxtjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Nuxt Documentation
-          </a>
-          <br>
-          <a
-            href="https://github.com/nuxt/nuxt.js"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Nuxt GitHub
-          </a>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            color="primary"
-            nuxt
-            to="/inspire"
-          >
-            Continue
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-col>
-  </v-row>
+              <v-hover v-slot="{ hover }" open-delay="20" close-delay="50">
+                <v-btn
+                  text
+                  class="text-xl tracking-widest"
+                  :class="hover ? 'red white--text' : false"
+                >
+                  All news
+                  <v-icon :color="hover ? 'white' : 'orange darken-4'" right>
+                    mdi-open-in-new
+                  </v-icon>
+                </v-btn>
+              </v-hover>
+            </NuxtLink>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <v-container>
+      <v-row>
+        <v-col cols="4">
+          <v-card rounded="lg" min-height="275" max-height="275" class="">
+            <TrackerCoronaComponentChartLineChart :dataPerDays="countDay" />
+          </v-card>
+        </v-col>
+        <v-col cols="4">
+          <v-card rounded="lg" min-height="275" max-height="275">
+            <TrackerCoronaComponentAddedCases :addedCases="addedEveryday" />
+          </v-card>
+        </v-col>
+        <v-col cols="4">
+          <v-card class="" min-height="275" max-height="275" rounded="lg">
+            <TrackerCoronaComponentDataByLocation />
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+  </v-container>
 </template>
 
 <script>
-import Logo from '~/components/Logo.vue'
-import VuetifyLogo from '~/components/VuetifyLogo.vue'
-
 export default {
-  components: {
-    Logo,
-    VuetifyLogo
+  loading: {
+    color: "red",
+    height: "5px"
+  },
+  async asyncData({ $axios }) {
+    function vaccineTarget() {
+      return $axios.$get("/vaksinasi/");
+    }
+    function getTotalCorona() {
+      return $axios.$get("/update/");
+    }
+
+    function getNews() {
+      return $axios.$get("/news/", {
+        headers: {
+          Authorization: process.env.NEWS_TOKEN
+        },
+        params: {
+          q: "Corona",
+          language: "id"
+        }
+      });
+    }
+
+    function polarAreaLocation() {
+      return $axios.$get("/location/");
+    }
+
+    const [pasien, news, location, vaccine] = await Promise.all([
+      getTotalCorona(),
+      getNews(),
+      polarAreaLocation(),
+      vaccineTarget()
+    ]);
+
+    return {
+      totalPasien: pasien.update.total,
+      countDay: pasien.update.harian,
+      newsResult: news.articles,
+      locationResult: location.list_data,
+      targetVaccine: vaccine.monitoring,
+      addedEveryday: pasien.update.penambahan
+    };
+  },
+
+  layout: "coronalayout",
+
+  mounted() {
+    this.dataStat[0].total = this.totalPasien.jumlah_positif;
+    this.dataStat[1].total = this.totalPasien.jumlah_sembuh;
+    this.dataStat[2].total = this.totalPasien.jumlah_meninggal;
+  },
+
+  data() {
+    return {
+      dataStat: [
+        {
+          title: "total positif",
+          emoticon: "mdi-emoticon-sad-outline",
+          total: ""
+        },
+        {
+          title: "total sembuh",
+          emoticon: "mdi-emoticon-happy-outline",
+          total: ""
+        },
+        {
+          title: "total meninggal",
+          emoticon: "mdi-emoticon-cry-outline",
+          total: ""
+        }
+      ]
+    };
   }
-}
+};
 </script>
+
+<style></style>
